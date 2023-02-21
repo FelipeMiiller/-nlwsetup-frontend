@@ -1,28 +1,57 @@
-import { generateDatesFromYearBeginning } from "../utilits/generate-dates-from-year-beginning";
+import { useEffect, useState } from "react";
+import { generateDatesFromYearBeginning } from "../utils/generate-dates-from-year-beginning";
 import { HabitDay } from "./habitDay";
+import { api } from "../lib/axios";
+import dayjs from "dayjs";
 
 const weekDays = ["D", "S", "T", "Q", "Q", "S", "S"];
 const summaryDates = generateDatesFromYearBeginning();
 const miniminSummaryDatesSize = 18 * 7; // 18weeks
 const amontOfDaysToFill = miniminSummaryDatesSize - summaryDates.length;
+
+type SummaryTypes = {
+  id: string;
+  date: string;
+  amount: number;
+  completed: number;
+}[];
 export function SummaryTable() {
+  const [summary, setSummary] = useState<SummaryTypes>([]);
+
+  useEffect(() => {
+    api.get("summary").then((response) => {
+      setSummary(response.data);
+    });
+  }, []);
+
   return (
     <div className="w-full flex ">
-      <div className="grid-rows-7 grid-flow-row gap-3">
+      <div className="grid grid-rows-7 grid-flow-row gap-3 pr-1 ">
         {weekDays.map((weekDay, i) => {
           return (
             <div
               key={i}
-              className="text-zinc-400 text-xl h-10 w-10 flex items-center justify-center"
+              className="text-zinc-400 text-xl h-10 w-10 flex items-center justify-center "
             >
               {weekDay}
             </div>
           );
         })}
       </div>
-      <div className="grid grid-rows-7 grid-flow-col gap-3">
-        {summaryDates.map((day) => {
-          return <HabitDay key={day.toString()} />;
+      <div className="grid grid-rows-7 grid-flow-col gap-3 overscroll-x">
+        {summary.length > 0 && summaryDates.map((date) => {
+          const dayInSummary = summary.find((day) => {
+            return dayjs(date).isSame(day.date, "day");
+          });
+
+          return (
+            <HabitDay
+              key={date.toString()}
+              date={date}
+              amount={dayInSummary?.amount}
+              defaultCompleted={dayInSummary?.completed}
+            />
+          );
         })}
 
         {amontOfDaysToFill > 0 &&
